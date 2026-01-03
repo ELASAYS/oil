@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>منصة زيوت السيارات الذكية | نظام موزعين MCP</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="overlay">
+  <div class="spinner"></div>
+  <p>جاري التحميل...</p>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="brand">
+    <div class="logo">⚙️</div>
+    <div>
+      <strong>منصة زيوت السيارات الذكية</strong><br>
+      <small>نظام موزعين معتمدين | مدعوم بالذكاء الاصطناعي</small>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="installAppBtn" class="btn ghost" style="display:none;">📱 تثبيت</button>
+    <button class="btn ai-btn" onclick="openAIAssistant()">🤖 مساعد AI</button>
+    <button class="btn primary" onclick="bulkInquiry()">📋 قائمة أسعار الجملة</button>
+  </div>
+</header>
+
+<!-- Stats Dashboard -->
+<section class="stats-container">
+  <div class="stat-card">
+    <div class="stat-icon">📦</div>
+    <div class="stat-info">
+      <span class="stat-value" id="totalProducts">0</span>
+      <span class="stat-label">إجمالي المنتجات</span>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📂</div>
+    <div class="stat-info">
+      <span class="stat-value" id="totalCategories">0</span>
+      <span class="stat-label">الفئات</span>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">💰</div>
+    <div class="stat-info">
+      <span class="stat-value" id="avgPrice">0</span>
+      <span class="stat-label">متوسط السعر</span>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📊</div>
+    <div class="stat-info">
+      <span class="stat-value" id="filteredCount">0</span>
+      <span class="stat-label">نتائج البحث</span>
+    </div>
+  </div>
+</section>
+
+<main class="container">
+
+  <!-- AI Assistant Panel -->
+  <div id="aiPanel" class="ai-panel" style="display:none;">
+    <div class="ai-header">
+      <h3>🤖 مساعد الذكاء الاصطناعي</h3>
+      <button class="btn-close" onclick="closeAIAssistant()">✕</button>
+    </div>
+    <div class="ai-chat" id="aiChat">
+      <div class="ai-message bot">
+        <div class="message-content">
+          مرحباً! أنا مساعدك الذكي. يمكنني مساعدتك في:
+          <ul>
+            <li>🔍 البحث عن منتجات محددة</li>
+            <li>💡 تقديم توصيات بناءً على احتياجاتك</li>
+            <li>📊 مقارنة الأسعار والمواصفات</li>
+            <li>❓ الإجابة عن أي استفسارات</li>
+          </ul>
+          اكتب استفسارك وسأساعدك فوراً!
+        </div>
+      </div>
+    </div>
+    <div class="ai-input-area">
+      <input type="text" id="aiInput" placeholder="اسأل عن أي منتج أو خدمة..." />
+      <button class="btn primary" onclick="sendAIMessage()">إرسال</button>
+    </div>
+    <div class="ai-suggestions">
+      <button class="suggestion-btn" onclick="quickAsk('أفضل زيت محرك للسيارات اليابانية')">زيت للسيارات اليابانية</button>
+      <button class="suggestion-btn" onclick="quickAsk('ما هي أسعار عبوات 20 لتر؟')">أسعار عبوات 20 لتر</button>
+      <button class="suggestion-btn" onclick="quickAsk('أريد فلاتر عالية الجودة')">فلاتر عالية الجودة</button>
+    </div>
+  </div>
+
+  <!-- Advanced Filters -->
+  <section class="filters-advanced">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>🔍 البحث</label>
+        <input id="searchInput" placeholder="ابحث باسم المنتج..." oninput="applyFilters()">
+      </div>
+      
+      <div class="filter-group">
+        <label>📂 الفئة</label>
+        <select id="categoryFilter" onchange="applyFilters()">
+          <option value="all">كل الفئات</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>📦 حجم العبوة</label>
+        <select id="packFilter" onchange="applyFilters()">
+          <option value="all">كل الأحجام</option>
+          <option value="1">1 لتر</option>
+          <option value="4">4 لتر</option>
+          <option value="5">5 لتر</option>
+          <option value="20">20 لتر</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>💰 نطاق السعر</label>
+        <div class="price-range">
+          <input type="number" id="minPrice" placeholder="من" oninput="applyFilters()">
+          <span>-</span>
+          <input type="number" id="maxPrice" placeholder="إلى" oninput="applyFilters()">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>🔢 الترتيب</label>
+        <select id="sortOrder" onchange="applyFilters()">
+          <option value="name-asc">الاسم (أ-ي)</option>
+          <option value="name-desc">الاسم (ي-أ)</option>
+          <option value="price-asc">السعر (الأقل)</option>
+          <option value="price-desc">السعر (الأعلى)</option>
+          <option value="size-asc">الحجم (الأصغر)</option>
+          <option value="size-desc">الحجم (الأكبر)</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn secondary" onclick="applyFilters()">🔍 بحث</button>
+        <button class="btn ghost" onclick="resetFilters()">🔄 إعادة تعيين</button>
+        <button class="btn ghost" onclick="exportResults()">📥 تصدير</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- View Toggle -->
+  <div class="view-toggle">
+    <button class="view-btn active" data-view="table" onclick="switchView('table')">📋 جدول</button>
+    <button class="view-btn" data-view="grid" onclick="switchView('grid')">🔲 شبكة</button>
+    <button class="view-btn" data-view="cards" onclick="switchView('cards')">🗂️ بطاقات</button>
+  </div>
+
+  <!-- Products Table View -->
+  <div id="tableView" class="view-container active">
+    <table class="products">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>المنتج</th>
+          <th>الفئة</th>
+          <th>العبوة</th>
+          <th>سعر الجملة</th>
+          <th>السعر/لتر</th>
+          <th>الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody id="productsBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Products Grid View -->
+  <div id="gridView" class="view-container products-grid" style="display:none;"></div>
+
+  <!-- Products Cards View -->
+  <div id="cardsView" class="view-container products-cards" style="display:none;"></div>
+
+  <!-- Pagination -->
+  <div class="pagination" id="pagination"></div>
+
+</main>
+
+<!-- Cart Float Button -->
+<div class="cart-float" onclick="showCart()">
+  🛒 <span id="cartCount">0</span>
+</div>
+
+<!-- Cart Modal -->
+<div id="cartModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>🛒 سلة الطلبات</h2>
+      <button class="btn-close" onclick="closeCart()">✕</button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <strong>الإجمالي:</strong>
+        <span id="cartTotal">0 ج.م</span>
+      </div>
+      <div class="cart-actions">
+        <button class="btn ghost" onclick="clearCart()">🗑️ إفراغ السلة</button>
+        <button class="btn primary" onclick="checkoutCart()">📱 إرسال الطلب</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Details Modal -->
+<div id="detailsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>تفاصيل المنتج</h2>
+      <button class="btn-close" onclick="closeDetails()">✕</button>
+    </div>
+    <div id="productDetails"></div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <p>© 2025 منصة زيوت السيارات الذكية - مدعوم بـ MCP & AI</p>
+  <div class="footer-links">
+    <a href="#" onclick="showAbout()">عن المنصة</a>
+    <a href="#" onclick="showHelp()">المساعدة</a>
+    <a href="#" onclick="showContact()">اتصل بنا</a>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(() => {
+    console.log('Service Worker registered successfully');
+  });
+}
+</script>
+</body>
+</html>
